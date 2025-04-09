@@ -1,17 +1,26 @@
+# Step 1: Build the React app
+FROM node:14.8.0-alpine3.12 AS builder
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+COPY . ./
+RUN npm run build
+
+# Step 2: Serve the app with a lightweight HTTP server
 FROM node:14.8.0-alpine3.12
 
-WORKDIR .
+# Install 'serve' globally
+RUN npm install -g serve
 
-COPY package.json ./
-COPY package-lock.json ./
+WORKDIR /app
 
-RUN npm install
-RUN npm install react-scripts@3.4.3 -g
+# Copy build artifacts from the builder stage
+COPY --from=builder /app/build ./build
 
-CMD ["pwd"]
-COPY . ./
-
+# Expose the port serve will run on
 EXPOSE 3000
 
-CMD ["npm", "start"]
-
+# Start the app
+CMD ["serve", "-s", "build", "-l", "3000"]
