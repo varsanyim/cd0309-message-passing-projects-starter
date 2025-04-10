@@ -1,6 +1,5 @@
-Use the UdaConnect business requirements to determine which communication protocol and technologies to use for the project:
+We use RESTful APIs for external-facing and frontend-integrated services due to their simplicity, human-readability, and broad compatibility. REST is ideal for standard CRUD operations and ensures ease of testing and integration with tools like Postman or web browsers.
 
-REST API is easy to debug and frontend-friendly
-gRPC is high-performance, strongly typed, great for internal S2S
-Kafka supports async, non-blocking flows and decoupling, but in the future it can speed up queries too
+gRPC is chosen for internal service-to-service communication where performance, strict typing, and efficient binary serialization are critical. It allows us to define clear contracts via .proto files and significantly reduces payload size and latency compared to REST.
 
+Kafka enables asynchronous, event-driven communication between services, allowing them to be loosely coupled and independently scalable. It is particularly suited for broadcasting updates, audit logging, and streaming scenarios without blocking the sender or requiring immediate responses.

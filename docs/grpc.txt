@@ -1,0 +1,55 @@
+# gRPC Endpoint Documentation for location-api
+
+## Service: LocationService
+Defined in: modules/proto/location.proto
+
+## Method: GetLocation
+
+### Description:
+Retrieves a location by its unique ID.
+
+---
+
+## Request:
+LocationRequest {
+  int32 location_id = 1;
+}
+
+## Response:
+LocationResponse {
+  int64 id = 1;
+  int32 person_id = 2;
+  string latitude = 3;
+  string longitude = 4;
+  string creation_time = 5;  // ISO 8601 format
+}
+
+---
+
+## Example Call with grpcurl:
+
+# Syntax:
+grpcurl -plaintext -d '{"location_id": 29}' <HOST>:<PORT> location.LocationService/GetLocation
+
+# Example (within the cluster):
+grpcurl -plaintext -d '{"location_id": 29}' location-api:50051 location.LocationService/GetLocation
+
+# Example (from local machine using port-forwarding):
+# First forward the port:
+#   kubectl port-forward svc/location-api 50051:50051
+grpcurl -plaintext -proto location.proto -d '{"location_id": 29}' localhost:50051 location.LocationService/GetLocation
+
+---
+
+## Expected Response:
+
+/ # grpcurl -plaintext -proto location.proto \
+>   -d '{"location_id": 29}' \
+>   location-api:50051 location.LocationService/GetLocation
+{
+  "id": "29",
+  "personId": 1,
+  "latitude": "-122.290524",
+  "longitude": "37.553441",
+  "creationTime": "2020-08-18T10:37:06"
+}
