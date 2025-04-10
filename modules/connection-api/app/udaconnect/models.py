@@ -11,7 +11,7 @@ from sqlalchemy import BigInteger, Column, Date, DateTime, ForeignKey, Integer, 
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.ext.hybrid import hybrid_property
 
-
+from typing import ClassVar
 class Person(db.Model):
     __tablename__ = "person"
 
@@ -28,7 +28,7 @@ class Location(db.Model):
     person_id = Column(Integer, ForeignKey(Person.id), nullable=False)
     coordinate = Column(Geometry("POINT"), nullable=False)
     creation_time = Column(DateTime, nullable=False, default=datetime.utcnow)
-    _wkt_shape: str = None
+    _wkt_shape: ClassVar[str] = None
 
     @property
     def wkt_shape(self) -> str:

@@ -5,7 +5,7 @@ class Persons extends Component {
   constructor(props) {
     super(props);
     // TODO: endpoint should be abstracted into a config variable
-    this.endpoint_url = `http://${window.location.hostname}:30001/api/persons`;
+    this.endpoint_url = `http://192.168.2.149:30004/api/persons`;
     this.state = {
       persons: [],
       display: null,

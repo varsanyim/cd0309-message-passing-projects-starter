@@ -1,18 +1,17 @@
-from .app import Response
 from datetime import datetime
 
 from app.udaconnect.models import Location
 from app.udaconnect.schemas import LocationSchema
 
 from app.udaconnect.services import LocationService
-from flask import request
+from flask import request, Response
 from flask_accepts import accepts, responds
 from flask_restx import Namespace, Resource
 from typing import Optional, List
 
 DATE_FORMAT = "%Y-%m-%d"
 
-api = Namespace("UdaConnect", description="Connections via geolocation.")  # noqa
+api = Namespace("UdaConnect: Location", description="Connections via geolocation.")  # noqa
 
 
 # TODO: This needs better exception handling
@@ -26,7 +25,7 @@ class LocationResource(Resource):
         location: Location = LocationService.create(request.get_json())
         return Response(status=202)
 
-    @responds(schema=LocationSchema, many=True)
+    @responds(schema=LocationSchema(many=True))
     def get(self) -> List[Location]:
         locations: List[Location] = LocationService.retrieve_all()
         return locations    

@@ -1,3 +1,6 @@
+from app import g
+import json
+
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, List
@@ -105,10 +108,11 @@ class LocationService:
         new_location.person_id = location["person_id"]
         new_location.creation_time = location["creation_time"]
         new_location.coordinate = ST_Point(location["latitude"], location["longitude"])
-        db.session.add(new_location)
-        db.session.commit()
-
-        return new_location
+        kafka_data = json.dumps(new_location).encode()
+        g.kafka_producer.send(g.topic_name, value=kafka_data)
+        # db.session.add(new_location)
+        # db.session.commit()
+        # return new_location
 
 
 class PersonService:
@@ -118,11 +122,12 @@ class PersonService:
         new_person.first_name = person["first_name"]
         new_person.last_name = person["last_name"]
         new_person.company_name = person["company_name"]
+        kafka_data = json.dumps(new_person).encode()
+        g.kafka_producer.send(g.topic_name, value=kafka_data)
 
-        db.session.add(new_person)
-        db.session.commit()
-
-        return new_person
+        # db.session.add(new_person)
+        # db.session.commit()
+        # return new_person
 
     @staticmethod
     def retrieve(person_id: int) -> Person:

@@ -31,7 +31,7 @@ spec:
         service: connection-api
     spec:
       containers:
-      - image: udacity/nd064-connection-api:latest
+      - image: varsanyim/connection-api:latest
         name: connection-api
         imagePullPolicy: Always
         env:

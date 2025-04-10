@@ -1,4 +1,4 @@
-from .app import g
+from wsgi import g
 import json
 
 import logging

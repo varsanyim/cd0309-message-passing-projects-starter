@@ -24,4 +24,5 @@ shapely
 SQLAlchemy
 Werkzeug
 flask-restx
-kafka
+kafka-python
+requests

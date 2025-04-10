@@ -1,6 +1,5 @@
-from .app import g
 import json
-
+import requests
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, List
@@ -16,6 +15,7 @@ logger = logging.getLogger("udaconnect-api")
 
 
 class ConnectionService:
+
     @staticmethod
     def find_contacts(person_id: int, start_date: datetime, end_date: datetime, meters=5
     ) -> List[Connection]:
@@ -83,6 +83,105 @@ class ConnectionService:
 
         return result
 
+    @staticmethod
+    def find_contacts_not_working(person_id: int, start_date: datetime, end_date: datetime, meters=5) -> List[Connection]:
+        locations = []
+        persons = []
+
+        # --- Fetch locations from location-api ---
+        try:
+            response = requests.get("http://location-api:5000/api/locations", timeout=5)
+            response.raise_for_status()
+            jls = response.json()
+            for jl in jls:
+                location = Location(
+                    id=jl["id"],
+                    person_id=jl["person_id"],
+                    creation_time=datetime.strptime(jl["creation_time"], "%Y-%m-%dT%H:%M:%S"),
+                )
+                location.set_wkt_with_coords(jl["latitude"], jl["longitude"])
+                locations.append(location)
+        except requests.RequestException as e:
+            return "Failed to retrieve locations", 503
+
+        # --- Fetch persons from person-api ---
+        try:
+            response = requests.get("http://person-api:5000/api/persons", timeout=5)
+            response.raise_for_status()
+            jps = response.json()
+            for jp in jps:
+                person = Person(
+                    id=jp["id"],
+                    first_name=jp["first_name"],
+                    last_name=jp["last_name"],
+                    company_name=jp["company_name"],
+                )
+                persons.append(person)
+        except requests.RequestException as e:
+            return "Failed to retrieve persons", 503
+
+        # --- Filter locations for the target person and time range ---
+        person_locations = [
+            loc for loc in locations
+            if loc.person_id == person_id and start_date <= loc.creation_time < end_date
+        ]
+
+        # --- Cache persons by ID ---
+        person_map: Dict[int, Person] = {person.id: person for person in persons}
+
+        # --- Prepare queries ---
+        data = []
+        for location in person_locations:
+            data.append(
+                {
+                    "person_id": person_id,
+                    "longitude": location.longitude,
+                    "latitude": location.latitude,
+                    "meters": meters,
+                    "start_date": start_date.strftime("%Y-%m-%d"),
+                    "end_date": (end_date + timedelta(days=1)).strftime("%Y-%m-%d"),
+                }
+            )
+
+        # --- Run spatial proximity query ---
+        query = text("""
+            SELECT person_id, id, ST_X(coordinate), ST_Y(coordinate), creation_time
+            FROM location
+            WHERE ST_DWithin(
+                coordinate::geography,
+                ST_SetSRID(ST_MakePoint(:latitude, :longitude), 4326)::geography,
+                :meters
+            )
+            AND person_id != :person_id
+            AND TO_DATE(:start_date, 'YYYY-MM-DD') <= creation_time
+            AND TO_DATE(:end_date, 'YYYY-MM-DD') > creation_time;
+        """)
+
+        result: List[Connection] = []
+
+        for line in data:
+            for (
+                exposed_person_id,
+                location_id,
+                exposed_lat,
+                exposed_long,
+                exposed_time,
+            ) in db.engine.execute(query, **line):
+                location = Location(
+                    id=location_id,
+                    person_id=exposed_person_id,
+                    creation_time=exposed_time,
+                )
+                location.set_wkt_with_coords(exposed_lat, exposed_long)
+
+                result.append(
+                    Connection(
+                        person=person_map[exposed_person_id],
+                        location=location,
+                    )
+                )
+
+        return result
 
 class LocationService:
     @staticmethod
@@ -108,11 +207,10 @@ class LocationService:
         new_location.person_id = location["person_id"]
         new_location.creation_time = location["creation_time"]
         new_location.coordinate = ST_Point(location["latitude"], location["longitude"])
-        kafka_data = json.dumps(new_location).encode()
-        g.kafka_producer.send(g.topic_name, value=kafka_data)
-        # db.session.add(new_location)
-        # db.session.commit()
-        # return new_location
+        db.session.add(new_location)
+        db.session.commit()
+
+        return new_location
 
 
 class PersonService:
@@ -122,12 +220,11 @@ class PersonService:
         new_person.first_name = person["first_name"]
         new_person.last_name = person["last_name"]
         new_person.company_name = person["company_name"]
-        kafka_data = json.dumps(new_person).encode()
-        g.kafka_producer.send(g.topic_name, value=kafka_data)
 
-        # db.session.add(new_person)
-        # db.session.commit()
-        # return new_person
+        db.session.add(new_person)
+        db.session.commit()
+
+        return new_person
 
     @staticmethod
     def retrieve(person_id: int) -> Person:

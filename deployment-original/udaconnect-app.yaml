@@ -31,7 +31,7 @@ spec:
         service: udaconnect-app
     spec:
       containers:
-      - image: varsanyim/frontend:latest
+      - image: udacity/nd064-udaconnect-app:latest
         name: udaconnect-app
         ports:
         - containerPort: 3000

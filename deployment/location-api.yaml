@@ -31,7 +31,7 @@ spec:
         service: location-api
     spec:
       containers:
-      - image: udacity/nd064-location-api:latest
+      - image: varsanyim/location-api:latest
         name: location-api
         imagePullPolicy: Always
         env:

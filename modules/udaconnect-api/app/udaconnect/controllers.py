@@ -1,4 +1,4 @@
-from .app import Response
+from app import Response
 from datetime import datetime
 
 from app.udaconnect.models import Connection, Location, Person
@@ -15,7 +15,7 @@ from typing import Optional, List
 
 DATE_FORMAT = "%Y-%m-%d"
 
-api = Namespace("UdaConnect", description="Connections via geolocation.")  # noqa
+api = Namespace("UdaConnect (monolith)", description="Connections via geolocation.")  # noqa
 
 
 # TODO: This needs better exception handling
@@ -46,7 +46,7 @@ class PersonsResource(Resource):
         new_person: Person = PersonService.create(payload)
         return Response(status=202)
 
-    @responds(schema=PersonSchema, many=True)
+    @responds(schema=PersonSchema(many=True))
     def get(self) -> List[Person]:
         persons: List[Person] = PersonService.retrieve_all()
         return persons
@@ -66,7 +66,7 @@ class PersonResource(Resource):
 @api.param("end_date", "Upper bound of date range", _in="query")
 @api.param("distance", "Proximity to a given user in meters", _in="query")
 class ConnectionDataResource(Resource):
-    @responds(schema=ConnectionSchema, many=True)
+    @responds(schema=ConnectionSchema(many=True))
     def get(self, person_id) -> ConnectionSchema:
         start_date: datetime = datetime.strptime(
             request.args["start_date"], DATE_FORMAT

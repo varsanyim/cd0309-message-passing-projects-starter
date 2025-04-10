@@ -5,7 +5,6 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
-
 def create_app(env=None):
     from app.config import config_by_name
     from app.routes import register_routes
@@ -17,10 +16,16 @@ def create_app(env=None):
     CORS(app)  # Set CORS for development
 
     register_routes(api, app)
-    db.init_app(app)
+    try:
+        db.init_app(app)
+    except Exception as e:
+        print("Error initializing database connection:", e)
+        app.close()
+        return None
 
     @app.route("/health")
     def health():
         return jsonify("healthy")
 
     return app
+

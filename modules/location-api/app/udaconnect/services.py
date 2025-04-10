@@ -1,4 +1,3 @@
-from .app import g
 import json
 
 import logging
@@ -6,10 +5,11 @@ from datetime import datetime, timedelta
 from typing import Dict, List
 
 from app import db
-from app.udaconnect.models import Connection, Location, Person
-from app.udaconnect.schemas import ConnectionSchema, LocationSchema, PersonSchema
+from app.udaconnect.models import Location
+from app.udaconnect.schemas import  LocationSchema
 from geoalchemy2.functions import ST_AsText, ST_Point
 from sqlalchemy.sql import text
+from wsgi import g
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger("udaconnect-api")
@@ -17,7 +17,12 @@ logger = logging.getLogger("udaconnect-api")
 class LocationService:
     @staticmethod
     def retrieve_all() -> List[Location]:
-        return db.session.query(Location).all()
+        rows = db.session.query(Location, Location.coordinate.ST_AsText()).all()
+        results = []
+        for location, coord_text in rows:
+            location.wkt_shape = coord_text.replace("POINT", "ST_POINT")
+            results.append(location)
+        return results
 
     @staticmethod
     def retrieve(location_id) -> Location:

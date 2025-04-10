@@ -25,3 +25,4 @@ SQLAlchemy
 Werkzeug
 flask-restx
 kafka
+requests

@@ -1,9 +1,10 @@
 import os
 from kafka import KafkaProducer
-from flask import g, Response   
+from flask import g   
 from app import create_app
 
 app = create_app(os.getenv("FLASK_ENV") or "test")
+
 if __name__ == "__main__":
     app.run(debug=True)
 
