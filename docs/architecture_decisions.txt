@@ -1,0 +1,6 @@
+Use the UdaConnect business requirements to determine which communication protocol and technologies to use for the project:
+
+REST API is easy to debug and frontend-friendly
+gRPC is high-performance, strongly typed, great for internal S2S
+Kafka supports async, non-blocking flows and decoupling, but in the future it can speed up queries too
+
