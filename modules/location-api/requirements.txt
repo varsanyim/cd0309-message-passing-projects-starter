@@ -26,3 +26,5 @@ Werkzeug
 flask-restx
 kafka-python
 requests
+grpcio 
+grpcio-tools

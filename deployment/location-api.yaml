@@ -6,10 +6,13 @@ metadata:
   name: location-api
 spec:
   ports:
-  - name: "5000"
+  - name: "http"
     port: 5000
     targetPort: 5000
     nodePort: 30003
+  - name: "grpc"
+    port: 50051
+    targetPort: 50051
   selector:
     service: location-api
   type: NodePort
@@ -34,6 +37,9 @@ spec:
       - image: varsanyim/location-api:latest
         name: location-api
         imagePullPolicy: Always
+        ports:
+        - containerPort: 5000  # REST API
+        - containerPort: 50051  # gRPC
         env:
         - name: DB_USERNAME
           valueFrom:

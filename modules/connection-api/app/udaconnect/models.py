@@ -7,6 +7,7 @@ from app import db  # noqa
 from geoalchemy2 import Geometry
 from geoalchemy2.shape import to_shape
 from shapely.geometry.point import Point
+from shapely.wkt import dumps as shapely_to_wkt
 from sqlalchemy import BigInteger, Column, Date, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -36,7 +37,8 @@ class Location(db.Model):
         if not self._wkt_shape:
             point: Point = to_shape(self.coordinate)
             # normalize WKT returned by to_wkt() from shapely and ST_AsText() from DB
-            self._wkt_shape = point.to_wkt().replace("POINT ", "ST_POINT")
+            # self._wkt_shape = point.to_wkt().replace("POINT ", "ST_POINT")
+            self._wkt_shape = shapely_to_wkt(point).replace("POINT ", "ST_POINT")
         return self._wkt_shape
 
     @wkt_shape.setter

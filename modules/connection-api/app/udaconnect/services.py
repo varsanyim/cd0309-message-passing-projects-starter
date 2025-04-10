@@ -1,3 +1,4 @@
+import grpc
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, List
@@ -8,11 +9,28 @@ from app.udaconnect.schemas import ConnectionSchema, LocationSchema, PersonSchem
 from geoalchemy2.functions import ST_AsText, ST_Point
 from sqlalchemy.sql import text
 
+from . import location_pb2_grpc
+from . import location_pb2
+
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger("udaconnect-api")
 
+def get_location_via_grpc(location_id: int) -> Location:
+    channel = grpc.insecure_channel("location-api:50051")
+    stub = location_pb2_grpc.LocationServiceStub(channel)
+    response = stub.GetLocation(location_pb2.LocationRequest(location_id=location_id))
+
+    location = Location(
+        id=response.id,
+        person_id=response.person_id,
+        creation_time=datetime.fromisoformat(response.creation_time),
+    )
+    location.set_wkt_with_coords(response.latitude, response.longitude)
+    return location
+
 
 class ConnectionService:
+    
     @staticmethod
     def find_contacts(person_id: int, start_date: datetime, end_date: datetime, meters=5
     ) -> List[Connection]:
@@ -57,27 +75,24 @@ class ConnectionService:
         """
         )
         result: List[Connection] = []
-        for line in tuple(data):
-            for (
-                exposed_person_id,
-                location_id,
-                exposed_lat,
-                exposed_long,
-                exposed_time,
-            ) in db.engine.execute(query, **line):
-                location = Location(
-                    id=location_id,
-                    person_id=exposed_person_id,
-                    creation_time=exposed_time,
-                )
-                location.set_wkt_with_coords(exposed_lat, exposed_long)
+        with db.engine.connect() as connection:
+            for line in data:
+                res = connection.execute(query, line)
+                for (
+                    exposed_person_id,
+                    location_id,
+                    exposed_lat,
+                    exposed_long,
+                    exposed_time,
+                ) in res:
+                    location =get_location_via_grpc(location_id)
 
-                result.append(
-                    Connection(
-                        person=person_map[exposed_person_id], location=location,
+                    result.append(
+                        Connection(
+                            person=person_map[exposed_person_id],
+                            location=location,
+                        )
                     )
-                )
-
         return result
 
 

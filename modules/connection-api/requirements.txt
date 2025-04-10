@@ -25,3 +25,5 @@ SQLAlchemy
 Werkzeug
 flask-restx
 requests
+grpcio 
+grpcio-tools

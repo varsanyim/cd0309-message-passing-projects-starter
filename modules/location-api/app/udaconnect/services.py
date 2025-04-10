@@ -9,7 +9,7 @@ from app.udaconnect.models import Location
 from app.udaconnect.schemas import  LocationSchema
 from geoalchemy2.functions import ST_AsText, ST_Point
 from sqlalchemy.sql import text
-from wsgi import g
+from flask import g
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger("udaconnect-api")
